@@ -10,17 +10,15 @@ from pprint import pprint
 SCRIPTPATH = '/home/bsod/ostabot/'
 CACHEPATH = SCRIPTPATH + 'cache/'
 OUTPATH = SCRIPTPATH + 'out/'
-"""
-$ python3.4 countera.py <token>
-Count number of messages. Start over if silent for 10 seconds.
-"""
+admin_chat_id = 74159985
 
+# main code
 def run_command(command):
-    p = subprocess.Popen(command,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-    return iter(p.stdout.readline, b'')
-
+    p = subprocess.Popen(command, stdout=subprocess.PIPE)
+    for output in iter(p.stdout.readline, b''):
+       l = output.decode('utf-8')
+       if ('Iteration' in l):
+           print(l)
 
 class MessageCounter(telepot.async.helper.ChatHandler):
     def __init__(self, seed_tuple, timeout):
@@ -58,8 +56,7 @@ class MessageCounter(telepot.async.helper.ChatHandler):
           command.append(outfile)
           self._seen.clear()
 
-          for l in run_command(command):
-            print(l)
+          run_command(command)
 
           f = open(OUTPATH + outfile, 'rb')
           yield from self.sender.sendMessage('Done')
@@ -70,15 +67,10 @@ class MessageCounter(telepot.async.helper.ChatHandler):
 def simple_function(seed_tuple):
     bot, msg, id = seed_tuple
     content_type, chat_type, chat_id = telepot.glance(msg)
-"""
-    if content_type == 'photo':
-      file_id = msg['photo'][-1]['file_id']
-      print(file_id)
-      print(msg)
-      print('------')
-#      pprint(bot)
-      yield from bot.download_file(file_id, CACHEPATH+'down.1')
-"""
+    if (chat_id != admin_chat_id):
+        yield from bot.sendMessage(admin_chat_id,'Request from @'+msg['from']['username'])
+        yield from bot.forwardMessage(admin_chat_id,chat_id, msg['message_id'])
+
 
 TOKEN = sys.argv[1]  # get token from command-line
 
