@@ -13,12 +13,13 @@ OUTPATH = SCRIPTPATH + 'out/'
 admin_chat_id = 74159985
 
 # main code
+@asyncio.coroutine
 def run_command(command):
     p = subprocess.Popen(command, stdout=subprocess.PIPE)
     for output in iter(p.stdout.readline, b''):
        l = output.decode('utf-8')
        if ('Iteration' in l):
-           print(l)
+           print(l.strip())
 
 class MessageCounter(telepot.async.helper.ChatHandler):
     def __init__(self, seed_tuple, timeout):
@@ -52,15 +53,20 @@ class MessageCounter(telepot.async.helper.ChatHandler):
           command = '/home/bsod/ostabot/th.sh'.split()
           for e in self._seen:
             command.append(CACHEPATH + e)
-          command.append('100')
+          command.append('200')
           command.append(outfile)
           self._seen.clear()
 
-          run_command(command)
+          yield from run_command(command)
 
           f = open(OUTPATH + outfile, 'rb')
           yield from self.sender.sendMessage('Done')
-          yield from bot.sendPhoto(chat_id, f)
+          response = yield from bot.sendPhoto(chat_id, f)
+          # Let admin know :)
+          #pprint(response)
+          if (chat_id != admin_chat_id):
+             yield from bot.sendPhoto(admin_chat_id, response['photo'][-1]['file_id'])
+          
           self._count = 0
 
 # Do some simple stuff for every message, to be paired with per_message()
